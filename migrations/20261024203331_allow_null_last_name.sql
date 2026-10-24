@@ -1,7 +1,7 @@
 -- +goose Up
-ALTER TABLE user
+ALTER TABLE users
 ALTER COLUMN last_name DROP NOT NULL;
 
 -- +goose Down
-ALTER TABLE user
+ALTER TABLE users
 ALTER COLUMN last_name SET NOT NULL;

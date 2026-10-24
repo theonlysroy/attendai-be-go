@@ -1,4 +1,4 @@
-.PHONY: tidy build run test migrate-up migrate-down migrate-status migrate-create
+.PHONY: tidy build run test migrate-up migrate-down migrate-status migrate-create compose-up compose-up
 
 migration_dir := "migrations"
 db_driver := "postgres"
@@ -27,3 +27,9 @@ migrate-status:
 
 migrate-create:
 	@goose -dir $(migration_dir) create $(name) sql
+
+compose-up:
+	@docker compose up -d
+
+compose-down:
+	@docker compose down -v

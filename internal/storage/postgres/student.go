@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/theonlysroy/attendai-be-go/internal/model"
 )
@@ -21,7 +22,7 @@ func (s *StudentStore) GetByID(ctx context.Context, id int64) (model.User, error
 
 	query := `
 		select id, full_name, email
-		from students
+		from users
 		where id = $1
 	`
 	err := s.db.QueryRow(ctx, query, id).Scan(
@@ -47,24 +48,11 @@ func (s *StudentStore) List(ctx context.Context) ([]model.User, error) {
 	}
 	defer rows.Close()
 
-	students := make([]model.User, 0)
-
-	for rows.Next() {
-		var student model.User
-
-		err := rows.Scan(&student)
-		if err != nil {
-			return nil, err
-		}
-
-		students = append(students, student)
-	}
-
-	if err := rows.Err(); err != nil {
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.User])
+	if err != nil {
 		return nil, err
 	}
-
-	return students, nil
+	return users, nil
 }
 
 func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, error) {

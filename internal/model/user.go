@@ -9,6 +9,6 @@ type User struct {
 	FullName   string    `json:"fullName"`
 	Role       string    `json:"role"` // roles - student, teacher
 	Email      string    `json:"email"`
-	Department *string   `json:"department"`
+	Department string   `json:"department"`
 	CreatedAt  time.Time `json:"createdAt"`
 }

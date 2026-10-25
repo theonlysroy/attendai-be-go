@@ -56,7 +56,28 @@ func (s *StudentStore) List(ctx context.Context) ([]model.User, error) {
 }
 
 func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, error) {
-	return model.User{}, nil
+
+	fullName := st.FirstName
+	if st.LastName != nil {
+		fullName = fullName + " " + *st.LastName
+	}
+
+	query := `
+		INSERT INTO users (first_name, last_name, full_name, email, role, department)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, first_name, last_name, full_name, email, role, department, created_at
+	`
+	rows, err := s.db.Query(ctx, query, st.FirstName, st.LastName, fullName, st.Email, "student", st.Department)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	newStudent, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[model.User])
+	if err != nil {
+		return model.User{}, nil
+	}
+
+	return newStudent, nil
 }
 
 func (s *StudentStore) UpdateByID(ctx context.Context, id int64) (model.User, error) {

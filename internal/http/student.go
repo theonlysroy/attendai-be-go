@@ -1,10 +1,12 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/theonlysroy/attendai-be-go/internal/model"
 	"github.com/theonlysroy/attendai-be-go/internal/storage"
 )
 
@@ -18,10 +20,32 @@ func NewStudentHandler(store storage.StudentStore) *StudentHandler {
 
 func (h *StudentHandler) Routes() chi.Router {
 	r := chi.NewRouter()
+
 	r.Get("/", MakeHTTPHandler(h.GetAllStudents))
 	r.Get("/{id}", MakeHTTPHandler(h.GetStudentById))
+	r.Post("/", MakeHTTPHandler(h.CreateStudent))
+
 	return r
 
+}
+
+func (h *StudentHandler) CreateStudent(w http.ResponseWriter, r *http.Request) error {
+	var studentObj model.User
+
+	err := json.NewDecoder(r.Body).Decode(&studentObj)
+	if err != nil {
+		return err
+	}
+
+	// fmt.Printf("req body -> %v\n", studentObj)
+
+	newStudent, err := h.store.Create(r.Context(), studentObj)
+	if err != nil {
+		return err
+	}
+
+	WriteJson(w, http.StatusCreated, ApiResponse{Success: true, Message: "Student created", Data: newStudent})
+	return nil
 }
 
 func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) error {

@@ -28,11 +28,8 @@ func (s *APIServer) Run() {
 	// student handler
 	// sh := NewStuden
 
-	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		WriteJson(w, http.StatusOK, ApiResponse{Success: true, Message: "Api running...", Data: nil})
-	})
-
 	r.Route("/api", func(r chi.Router) {
+		r.Get("/healthz", HealthzHandler)
 		r.Mount("/students", s.student.Routes())
 	})
 
@@ -40,6 +37,10 @@ func (s *APIServer) Run() {
 	if err := http.ListenAndServe(s.listenAddr, r); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func HealthzHandler(w http.ResponseWriter, r *http.Request) {
+	WriteJson(w, http.StatusOK, ApiResponse{Success: true, Message: "Api running...", Data: nil})
 }
 
 //---------------- helpers

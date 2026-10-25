@@ -8,7 +8,7 @@ tidy:
 	@go mod tidy
 
 build:
-	@go build -o bin/attendai .
+	@GOOS=linux GOARCH=amd64 go build -o bin/attendai .
 
 run: build
 	@./bin/attendai

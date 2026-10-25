@@ -3,21 +3,26 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/theonlysroy/attendai-be-go/internal/http"
 	"github.com/theonlysroy/attendai-be-go/internal/storage/postgres"
+	"github.com/theonlysroy/attendai-be-go/internal/utils"
 )
 
 func main() {
 
 	ctx := context.Background()
 
-	dbUrl := os.Getenv("DB_URL")
-	if dbUrl == "" {
-		dbUrl = "postgres://postgres:attendai@localhost:5432/attendai"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file", err)
 	}
+
+	dsn := "postgres://postgres:attendai@localhost:5432/attendaidb"
+	dbUrl := utils.Getkey("DB_URL", dsn)
+
 	db, err := pgxpool.New(ctx, dbUrl)
 	if err != nil {
 		log.Fatal(err)

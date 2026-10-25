@@ -23,7 +23,10 @@ func (h *StudentHandler) Routes() chi.Router {
 }
 
 func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) error {
-	// h.store.List()
-	WriteJson(w, http.StatusOK, ApiResponse{Success: true, Message: "Students fetched", Data: nil})
+	students, err := h.store.List(r.Context())
+	if err != nil {
+		return err
+	}
+	WriteJson(w, http.StatusOK, ApiResponse{Success: true, Message: "Students fetched.", Data: students})
 	return nil
 }

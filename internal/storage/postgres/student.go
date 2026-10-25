@@ -36,7 +36,8 @@ func (s *StudentStore) GetByID(ctx context.Context, id int64) (model.User, error
 func (s *StudentStore) List(ctx context.Context) ([]model.User, error) {
 	query := `
         SELECT *
-        FROM students
+        FROM users
+        WHERE role='student' 
         LIMIT 10
     `
 

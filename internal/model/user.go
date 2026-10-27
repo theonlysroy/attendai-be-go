@@ -7,8 +7,8 @@ type User struct {
 	FirstName  string    `json:"firstName"`
 	LastName   *string   `json:"lastName"`
 	FullName   string    `json:"fullName"`
-	Role       string    `json:"role"` // roles - student, teacher
+	Role       string    `json:"role"` // roles - student, teacher, admin
 	Email      string    `json:"email"`
-	Department string   `json:"department"`
+	Department string    `json:"department"`
 	CreatedAt  time.Time `json:"createdAt"`
 }

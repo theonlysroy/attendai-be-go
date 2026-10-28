@@ -2,10 +2,16 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/theonlysroy/attendai-be-go/internal/model"
+)
+
+var (
+	ErrInvalidStudentID = errors.New("invalid id")
+	ErrStudentNotFound  = errors.New("no student found with this student id")
 )
 
 type StudentStore struct {
@@ -18,20 +24,30 @@ func NewStudentStore(db *pgxpool.Pool) *StudentStore {
 }
 
 func (s *StudentStore) GetByID(ctx context.Context, id int64) (model.User, error) {
-	var student model.User
+	if id <= 0 {
+		return model.User{}, ErrInvalidStudentID
+	}
 
 	query := `
-		select id, full_name, email
+		select *
 		from users
-		where id = $1
+		where id=$1 AND role='student'
 	`
-	err := s.db.QueryRow(ctx, query, id).Scan(
-		&student.ID,
-		&student.FullName,
-		&student.Email,
-	)
+	rows, err := s.db.Query(ctx, query, id)
+	if err != nil {
+		return model.User{}, err
+	}
+	defer rows.Close()
 
-	return student, err
+	student, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[model.User])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.User{}, ErrStudentNotFound
+		}
+		return model.User{}, err
+	}
+
+	return student, nil
 }
 
 func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model.User, int64, error) {
@@ -85,7 +101,7 @@ func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, e
 
 	newStudent, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[model.User])
 	if err != nil {
-		return model.User{}, nil
+		return model.User{}, err
 	}
 
 	return newStudent, nil

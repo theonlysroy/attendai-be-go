@@ -34,15 +34,16 @@ func (s *StudentStore) GetByID(ctx context.Context, id int64) (model.User, error
 	return student, err
 }
 
-func (s *StudentStore) List(ctx context.Context) ([]model.User, error) {
+func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model.User, error) {
 	query := `
         SELECT *
         FROM users
         WHERE role='student' 
-        LIMIT 10
+        LIMIT $1
+        OFFSET $2
     `
 
-	rows, err := s.db.Query(ctx, query)
+	rows, err := s.db.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}

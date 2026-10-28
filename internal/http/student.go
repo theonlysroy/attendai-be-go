@@ -49,7 +49,7 @@ func (h *StudentHandler) CreateStudent(w http.ResponseWriter, r *http.Request) e
 }
 
 func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) error {
-	students, err := h.store.List(r.Context())
+	students, err := h.store.List(r.Context(), 10, 10)
 	if err != nil {
 		return err
 	}

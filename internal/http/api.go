@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -31,6 +32,14 @@ func (s *APIServer) Run() {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/healthz", HealthzHandler)
 		r.Mount("/students", s.student.Routes())
+
+		r.Get("/test/{pathParam}", func(w http.ResponseWriter, r *http.Request) {
+			pathParam := chi.URLParam(r, "pathParam")
+			fmt.Printf("path param: %+v", pathParam)
+
+			fmt.Println(chi.URLParam(r, "limit"))
+			WriteJson(w, http.StatusOK, pathParam)
+		})
 	})
 
 	log.Printf("Server running on %s", s.listenAddr)

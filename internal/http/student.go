@@ -49,11 +49,33 @@ func (h *StudentHandler) CreateStudent(w http.ResponseWriter, r *http.Request) e
 }
 
 func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) error {
-	students, err := h.store.List(r.Context(), 10, 10)
+	query := r.URL.Query()
+
+	pageStr := query.Get("page")
+	limitStr := query.Get("limit")
+
+	page := 1
+	limit := 5
+
+	if pageStr != "" {
+		p, _ := strconv.Atoi(pageStr)
+		page = p
+	}
+
+	if limitStr != "" {
+		l, _ := strconv.Atoi(limitStr)
+		limit = l
+	}
+
+	offset := (page - 1) * limit
+
+	students, total, err := h.store.List(r.Context(), limit, offset)
 	if err != nil {
 		return err
 	}
-	WriteJson(w, http.StatusOK, ApiResponse{Success: true, Message: "Students fetched.", Data: students})
+
+	meta := NewPaginationMeta(total, page, limit)
+	WriteJson(w, http.StatusOK, PaginatedResponse[model.User]{Success: true, Message: "Students fetched.", Data: students, Meta: meta})
 	return nil
 }
 
@@ -72,3 +94,29 @@ func UrlVars(r *http.Request, param string) int64 {
 	studentId, _ := strconv.Atoi(id)
 	return int64(studentId)
 }
+
+// func GetPaginationVars(r *http.Request) (int64, int64, error) {
+// 	// return page, limit
+// 	query := r.URL.Query()
+
+// 	pageStr := query.Get("page")
+// 	limitStr := query.Get("limit")
+
+// 	page := 1
+// 	limit := 5
+
+// 	if pageStr != "" {
+// 		p, err := strconv.Atoi(pageStr)
+// 		if err != nil || p < 1 {
+// 			return nil, nil, fmt.Sprintf("Page must be a positive number. Got %v", p)
+// 		}
+// 		page = p
+// 	}
+
+// 	if limitStr != "" {
+// 		l, err := strconv.Atoi(limitStr)
+// 		if err != nil || l < 1 || l > 100 {
+// 			retur
+// 		}
+// 	}
+// }

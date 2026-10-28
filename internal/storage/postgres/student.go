@@ -34,7 +34,12 @@ func (s *StudentStore) GetByID(ctx context.Context, id int64) (model.User, error
 	return student, err
 }
 
-func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model.User, error) {
+func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model.User, int64, error) {
+	countQuery := `
+		SELECT COUNT(*)
+		FROM users
+		WHERE role='student'
+	`
 	query := `
         SELECT *
         FROM users
@@ -42,18 +47,23 @@ func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model
         LIMIT $1
         OFFSET $2
     `
+	var total int64
+	err := s.db.QueryRow(ctx, countQuery).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	rows, err := s.db.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.User])
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return users, nil
+	return users, total, nil
 }
 
 func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, error) {

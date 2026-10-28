@@ -66,6 +66,22 @@ type ApiError struct {
 	Details any    `json:"details"`
 }
 
+type PaginationMeta struct {
+	Total       int64 `json:"total"`
+	Page        int   `json:"page"`
+	Limit       int   `json:"limit"`
+	TotalPages  int64 `json:"totalPages"`
+	HasNextPage bool  `json:"hasNextPage"`
+	HasPrevPage bool  `json:"hasPrevPage"`
+}
+
+type PaginatedResponse[T any] struct {
+	Success bool           `json:"success"`
+	Message string         `json:"message"`
+	Data    []T            `json:"data"`
+	Meta    PaginationMeta `json:"meta"`
+}
+
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
 func WriteJson(w http.ResponseWriter, status int, data any) {
@@ -79,5 +95,19 @@ func MakeHTTPHandler(f apiFunc) http.HandlerFunc {
 		if err := f(w, r); err != nil {
 			WriteJson(w, http.StatusBadRequest, ApiError{Success: false, Message: "Something went wrong", Details: err.Error()})
 		}
+	}
+}
+
+// pagination
+func NewPaginationMeta(total int64, page, limit int) PaginationMeta {
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+
+	return PaginationMeta{
+		Total:       total,
+		Page:        page,
+		Limit:       limit,
+		TotalPages:  totalPages,
+		HasNextPage: int64(page) < totalPages,
+		HasPrevPage: page > 1,
 	}
 }

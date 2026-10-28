@@ -94,29 +94,3 @@ func UrlVars(r *http.Request, param string) int64 {
 	studentId, _ := strconv.Atoi(id)
 	return int64(studentId)
 }
-
-// func GetPaginationVars(r *http.Request) (int64, int64, error) {
-// 	// return page, limit
-// 	query := r.URL.Query()
-
-// 	pageStr := query.Get("page")
-// 	limitStr := query.Get("limit")
-
-// 	page := 1
-// 	limit := 5
-
-// 	if pageStr != "" {
-// 		p, err := strconv.Atoi(pageStr)
-// 		if err != nil || p < 1 {
-// 			return nil, nil, fmt.Sprintf("Page must be a positive number. Got %v", p)
-// 		}
-// 		page = p
-// 	}
-
-// 	if limitStr != "" {
-// 		l, err := strconv.Atoi(limitStr)
-// 		if err != nil || l < 1 || l > 100 {
-// 			retur
-// 		}
-// 	}
-// }

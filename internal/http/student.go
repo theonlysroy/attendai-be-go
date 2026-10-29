@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -14,6 +15,10 @@ type StudentHandler struct {
 	store storage.StudentStore
 }
 
+var (
+	ErrStudentIdMissing = errors.New("Student id is required")
+)
+
 func NewStudentHandler(store storage.StudentStore) *StudentHandler {
 	return &StudentHandler{store: store}
 }
@@ -24,9 +29,40 @@ func (h *StudentHandler) Routes() chi.Router {
 	r.Get("/", MakeHTTPHandler(h.GetAllStudents))
 	r.Get("/{id}", MakeHTTPHandler(h.GetStudentById))
 	r.Post("/", MakeHTTPHandler(h.CreateStudent))
+	r.Post("/update/{id}", MakeHTTPHandler(h.UpdateStudentById))
+	r.Delete("/{id}", MakeHTTPHandler(h.DeleteStudentById))
 
 	return r
 
+}
+
+func (h *StudentHandler) DeleteStudentById(w http.ResponseWriter, r *http.Request) error {
+	studentId, err := UrlVars(r, "id")
+	if err != nil {
+		return ErrStudentIdMissing
+	}
+
+	err = h.store.DeleteByID(r.Context(), studentId)
+	if err != nil {
+		return err
+	}
+
+	WriteJson(w, http.StatusOK, ApiResponse{Success: true, Message: "Student deleted.", Data: studentId})
+	return nil
+}
+
+func (h *StudentHandler) UpdateStudentById(w http.ResponseWriter, r *http.Request) error {
+	studentId, err := UrlVars(r, "id")
+	if err != nil {
+		return ErrStudentIdMissing
+	}
+
+	updatedStudent, err := h.store.UpdateByID(r.Context(), studentId)
+	if err != nil {
+		return err
+	}
+	WriteJson(w, http.StatusAccepted, ApiResponse{Success: true, Message: "Student details updated.", Data: updatedStudent})
+	return nil
 }
 
 func (h *StudentHandler) CreateStudent(w http.ResponseWriter, r *http.Request) error {
@@ -80,7 +116,10 @@ func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *StudentHandler) GetStudentById(w http.ResponseWriter, r *http.Request) error {
-	studentId := UrlVars(r, "id")
+	studentId, err := UrlVars(r, "id")
+	if err != nil {
+		return ErrStudentIdMissing
+	}
 	student, err := h.store.GetByID(r.Context(), studentId)
 	if err != nil {
 		return err
@@ -89,8 +128,13 @@ func (h *StudentHandler) GetStudentById(w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
-func UrlVars(r *http.Request, param string) int64 {
+// helpers
+
+func UrlVars(r *http.Request, param string) (int64, error) {
 	id := chi.URLParam(r, param)
-	studentId, _ := strconv.Atoi(id)
-	return int64(studentId)
+	studentId, err := strconv.Atoi(id)
+	if err != nil {
+		return -1, err
+	}
+	return int64(studentId), nil
 }

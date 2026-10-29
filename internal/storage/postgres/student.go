@@ -112,5 +112,14 @@ func (s *StudentStore) UpdateByID(ctx context.Context, id int64) (model.User, er
 }
 
 func (s *StudentStore) DeleteByID(ctx context.Context, id int64) error {
+	query := `
+		UPDATE users
+		SET deleted_at = NOW()
+		WHERE id = $1
+	`
+	_, err := s.db.Query(ctx, query, id)
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -17,6 +17,7 @@ type StudentHandler struct {
 
 var (
 	ErrStudentIdMissing = errors.New("Student id is required")
+	ErrInvalidReqBody   = errors.New("Invalid request body")
 )
 
 func NewStudentHandler(store storage.StudentStore) *StudentHandler {
@@ -57,7 +58,14 @@ func (h *StudentHandler) UpdateStudentById(w http.ResponseWriter, r *http.Reques
 		return ErrStudentIdMissing
 	}
 
-	updatedStudent, err := h.store.UpdateByID(r.Context(), studentId)
+	var req model.UpdateStudentRequest
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		return ErrInvalidReqBody
+	}
+
+	updatedStudent, err := h.store.UpdateByID(r.Context(), studentId, req)
 	if err != nil {
 		return err
 	}

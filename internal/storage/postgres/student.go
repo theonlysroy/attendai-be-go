@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrInvalidStudentID = errors.New("invalid id")
-	ErrStudentNotFound  = errors.New("no student found with this student id")
+	ErrInvalidStudentID         = errors.New("invalid id")
+	ErrStudentNotFound          = errors.New("no student found with this student id")
+	ErrNoStudentDetailsToUpdate = errors.New("no student details found to update")
 )
 
 type StudentStore struct {
@@ -107,8 +108,46 @@ func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, e
 	return newStudent, nil
 }
 
-func (s *StudentStore) UpdateByID(ctx context.Context, id int64) (model.User, error) {
-	return model.User{}, nil
+func (s *StudentStore) UpdateByID(ctx context.Context, id int64, st model.UpdateStudentRequest) (model.User, error) {
+	var student model.User
+
+	findUserQuery := `
+		SELECT first_name, last_name, email, deleted_at
+		FROM users
+		WHERE id = $1
+	`
+	updateUserquery := `
+		UPDATE users SET
+		first_name = COALESCE(@first_name, first_name),
+		last_name = COALESCE(@last_name, last_name),
+		email = COALESCE(@email, email)
+		WHERE id = @id
+		RETURNING id, first_name, last_name, email
+	`
+
+	if st.FirstName == nil && st.LastName == nil && st.Email == nil {
+		return model.User{}, ErrNoStudentDetailsToUpdate
+	}
+
+	err := s.db.QueryRow(ctx, findUserQuery, id).Scan(&student.FirstName, &student.LastName, &student.Email, &student.DeletedAt)
+
+	if err != nil {
+		return model.User{}, ErrStudentNotFound
+	}
+
+	if student.DeletedAt != nil {
+		return model.User{}, ErrStudentNotFound
+	}
+
+	// update query
+	err = s.db.QueryRow(ctx, updateUserquery, pgx.NamedArgs{
+		"id": id, "first_name": st.FirstName, "last_name": st.LastName, "email": st.Email}).Scan(&student.ID, &student.FirstName, &student.LastName, &student.Email)
+
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return student, nil
 }
 
 func (s *StudentStore) DeleteByID(ctx context.Context, id int64) error {

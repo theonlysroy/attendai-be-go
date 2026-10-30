@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/theonlysroy/attendai-be-go/internal/storage"
 )
 
@@ -25,6 +26,12 @@ func NewAPIServer(listenAddr string, studentStore storage.StudentStore) *APIServ
 // start the server
 func (s *APIServer) Run() {
 	r := chi.NewRouter()
+
+	// middleware
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	// student handler
 	// sh := NewStuden

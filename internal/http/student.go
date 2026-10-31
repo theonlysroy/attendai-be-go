@@ -97,6 +97,7 @@ func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) 
 
 	pageStr := query.Get("page")
 	limitStr := query.Get("limit")
+	searchStr := query.Get("search")
 
 	page := 1
 	limit := 5
@@ -113,7 +114,7 @@ func (h *StudentHandler) GetAllStudents(w http.ResponseWriter, r *http.Request) 
 
 	offset := (page - 1) * limit
 
-	students, total, err := h.store.List(r.Context(), limit, offset)
+	students, total, err := h.store.List(r.Context(), limit, offset, searchStr)
 	if err != nil {
 		return err
 	}

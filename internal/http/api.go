@@ -28,10 +28,10 @@ func (s *APIServer) Run() {
 	r := chi.NewRouter()
 
 	// middleware
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	// r.Use(middleware.RequestID)
+	r.Use(middleware.CleanPath)
 	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	// r.Use(middleware.Recoverer)
 
 	// student handler
 	// sh := NewStuden

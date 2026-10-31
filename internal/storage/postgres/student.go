@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -53,7 +54,7 @@ func (s *StudentStore) GetByID(ctx context.Context, id int64) (model.User, error
 	return student, nil
 }
 
-func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model.User, int64, error) {
+func (s *StudentStore) List(ctx context.Context, limit int, offset int, q string) ([]model.User, int64, error) {
 	countQuery := `
 		SELECT COUNT(*)
 		FROM users
@@ -62,9 +63,10 @@ func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model
 	query := `
         SELECT *
         FROM users
-        WHERE role='student' 
-        LIMIT $1
-        OFFSET $2
+        WHERE role='student'
+        	AND (first_name ILIKE @pattern OR email ILIKE @pattern)
+        LIMIT @limit
+        OFFSET @offset
     `
 	var total int64
 	err := s.db.QueryRow(ctx, countQuery).Scan(&total)
@@ -72,7 +74,8 @@ func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model
 		return nil, 0, err
 	}
 
-	rows, err := s.db.Query(ctx, query, limit, offset)
+	args := pgx.NamedArgs{"limit": limit, "offset": offset, "pattern": "%" + likeEscaper.Replace(q) + "%"}
+	rows, err := s.db.Query(ctx, query, args)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -178,3 +181,6 @@ func (s *StudentStore) DeleteByID(ctx context.Context, id int64) error {
 	}
 	return nil
 }
+
+// helpers
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)

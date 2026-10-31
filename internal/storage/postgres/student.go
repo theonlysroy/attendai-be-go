@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,6 +14,7 @@ var (
 	ErrInvalidStudentID         = errors.New("invalid id")
 	ErrStudentNotFound          = errors.New("no student found with this student id")
 	ErrNoStudentDetailsToUpdate = errors.New("no student details found to update")
+	ErrEmailAlreadyExists       = errors.New("email address already exists")
 )
 
 type StudentStore struct {
@@ -85,6 +87,20 @@ func (s *StudentStore) List(ctx context.Context, limit int, offset int) ([]model
 
 func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, error) {
 
+	var existingStudentId int64
+
+	findEmailQuery := `
+		SELECT id
+		FROM users
+		WHERE email = @email
+	`
+	s.db.QueryRow(ctx, findEmailQuery, pgx.NamedArgs{"email": st.Email}).Scan(&existingStudentId)
+
+	log.Printf("Existing student id: %d", existingStudentId)
+	if existingStudentId != 0 {
+		return model.User{}, ErrEmailAlreadyExists
+	}
+
 	fullName := st.FirstName
 	if st.LastName != nil {
 		fullName = fullName + " " + *st.LastName
@@ -93,7 +109,7 @@ func (s *StudentStore) Create(ctx context.Context, st model.User) (model.User, e
 	query := `
 		INSERT INTO users (first_name, last_name, full_name, email, role, department)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, first_name, last_name, full_name, email, role, department, created_at
+		RETURNING id, first_name, last_name, full_name, email, role, department, created_at, deleted_at
 	`
 	rows, err := s.db.Query(ctx, query, st.FirstName, st.LastName, fullName, st.Email, "student", st.Department)
 	if err != nil {

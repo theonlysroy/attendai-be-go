@@ -14,12 +14,14 @@ import (
 type APIServer struct {
 	listenAddr string
 	student    *StudentHandler
+	auth       *AuthHandler
 }
 
 func NewAPIServer(listenAddr string, studentStore storage.StudentStore) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
 		student:    NewStudentHandler(studentStore),
+		auth:       NewAuthHandler(),
 	}
 }
 
@@ -39,6 +41,7 @@ func (s *APIServer) Run() {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/healthz", HealthzHandler)
 		r.Mount("/students", s.student.Routes())
+		r.Mount("/auth", s.auth.Routes())
 
 		r.Get("/test/{pathParam}", func(w http.ResponseWriter, r *http.Request) {
 			pathParam := chi.URLParam(r, "pathParam")

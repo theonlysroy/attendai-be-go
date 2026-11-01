@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -62,6 +63,7 @@ func (h *StudentHandler) UpdateStudentById(w http.ResponseWriter, r *http.Reques
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
+		fmt.Println(err)
 		return ErrInvalidReqBody
 	}
 

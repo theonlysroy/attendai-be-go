@@ -1,4 +1,4 @@
-.PHONY: tidy build run test migrate-up migrate-down migrate-status migrate-create compose-up compose-up seed db-setup
+.PHONY: tidy build run test migrate-up migrate-down migrate-status migrate-create compose-up compose-up seed db-setup db-setup-no-seed
 
 migration_dir := "migrations"
 db_driver := "postgres"
@@ -38,3 +38,5 @@ seed:
 	@go run ./cmd/seed
 
 db-setup: compose-up migrate-up seed
+
+db-setup-no-seed: compose-up migrate-up

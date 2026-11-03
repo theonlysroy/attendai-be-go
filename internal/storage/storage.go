@@ -13,3 +13,7 @@ type StudentStore interface {
 	UpdateByID(ctx context.Context, id int64, s model.UpdateStudentRequest) (model.User, error)
 	DeleteByID(ctx context.Context, id int64) error
 }
+
+type AuthStore interface {
+	SaveToken(ctx context.Context, token string)
+}

@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/theonlysroy/attendai-be-go/internal/model"
 	"github.com/theonlysroy/attendai-be-go/internal/storage"
 )
 
 type AuthHandler struct {
 	userStore storage.StudentStore
-	secret []byte
+	secret    []byte
 }
 
 var (
@@ -40,9 +42,9 @@ func (h *AuthHandler) Routes() chi.Router {
 
 func (h *AuthHandler) sign(userID int64, ttl time.Duration) (string, error) {
 	claims := jwt.RegisteredClaims{
-		Subject: userID,
-		IssuedAt: jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl))
+		Subject:   strconv.Itoa(int(userID)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(h.secret)
 }
@@ -57,12 +59,32 @@ func (h *AuthHandler) RegisterController(w http.ResponseWriter, r *http.Request)
 	}
 
 	// create the user
+	user := model.User{
+		FirstName:  payload.FirstName,
+		LastName:   &payload.LastName,
+		Role:       payload.Type,
+		Email:      payload.Email,
+		Department: payload.Department,
+	}
+	user, err := h.userStore.Create(r.Context(), user)
+	if err != nil {
+		return err
+	}
 
 	// generate tokens
-	// save token
-	// return response
+	token, err := h.sign(user.ID, 24*time.Hour)
+	if err != nil {
+		return err
+	}
 
-	WriteJson(w, http.StatusCreated, ApiResponse{Success: true, Message: "in register", Data: payload})
+	responseData := &struct {
+		AccessToken string `json:"accessToken"`
+	}{
+		AccessToken: token,
+	}
+
+	WriteJson(w, http.StatusCreated, ApiResponse{Success: true, Message: "in register", Data: responseData})
+
 	return nil
 }
 
